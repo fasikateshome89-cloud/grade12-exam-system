@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= exam.subject %> - Exam Details</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <div class="logo">Ministry of Education</div>
+            <div class="user-info">
+                <span><%= student.fullName %></span>
+                <div class="avatar"><%= student.fullName.charAt(0) %></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container main-content">
+        <div class="exam-details-card">
+            <div class="exam-header-icon"><%= exam.subject.charAt(0) %></div>
+            <h1><%= exam.courseName %></h1>
+            <h2><%= exam.subject %></h2>
+            
+            <div class="exam-info">
+                <div class="info-item">
+                    <strong>Duration:</strong> <%= exam.duration %> minutes
+                </div>
+                <div class="info-item">
+                    <strong>Total Questions:</strong> <%= exam.questions.length %>
+                </div>
+                <div class="info-item">
+                    <strong>Total Marks:</strong> <%= exam.totalMarks %>
+                </div>
+                <div class="info-item">
+                    <strong>Opened:</strong> <%= exam.openDate.toLocaleDateString() %>
+                </div>
+                <div class="info-item">
+                    <strong>Closes:</strong> <%= exam.closeDate.toLocaleDateString() %>
+                </div>
+            </div>
+
+            <% if (existingAttempt) { %>
+                <div class="alert alert-warning">
+                    You have an in-progress attempt. You can continue from where you left off.
+                </div>
+                <a href="/exam/attempt/<%= existingAttempt._id %>" class="btn btn-primary btn-large">
+                    Continue Attempt
+                </a>
+            <% } else { %>
+                <div class="quiz-password-section">
+                    <h3>Enter Quiz Password</h3>
+                    <form id="startExamForm" action="/exam/<%= exam._id %>/start" method="POST">
+                        <div class="form-group">
+                            <input type="password" name="quizPassword" placeholder="Quiz Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Attempt Exam</button>
+                    </form>
+                </div>
+            <% } %>
+
+            <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('startExamForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const quizPassword = formData.get('quizPassword');
+            
+            try {
+                const response = await fetch('/exam/<%= exam._id %>/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ quizPassword })
+                });
+                
+                const data = await response.json();
+                
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error starting exam. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

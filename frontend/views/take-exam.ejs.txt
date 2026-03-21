@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= attempt.exam.subject %> - Exam</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="exam-page">
+    <div class="exam-header">
+        <div class="container">
+            <div class="exam-title"><%= attempt.exam.subject %></div>
+            <div class="timer" id="timer">Time left: <span id="time-display">00:00:00</span></div>
+        </div>
+    </div>
+
+    <div class="exam-container">
+        <div class="question-nav">
+            <h4>Question</h4>
+            <div class="nav-info">
+                <div id="current-q-num">1</div>
+                <div id="answer-status">Not yet answered</div>
+                <div>Marked out of 1.00</div>
+            </div>
+            <button class="btn btn-sm btn-secondary" id="flag-btn" onclick="toggleFlag()">
+                🚩 Flag question
+            </button>
+        </div>
+
+        <div class="question-area">
+            <div class="question-header">
+                <div class="breadcrumb"><%= attempt.exam.courseName %> / <%= attempt.exam.subject %></div>
+                <h2><%= attempt.exam.subject %></h2>
+            </div>
+
+            <div class="question-box" id="question-container">
+            </div>
+
+            <div class="question-controls">
+                <button class="btn btn-secondary" id="prev-btn" onclick="previousQuestion()" disabled>Previous page</button>
+                <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Next page</button>
+                <button class="btn btn-success hidden" id="finish-btn" onclick="showSummary()">Finish attempt ...</button>
+            </div>
+        </div>
+
+        <div class="exam-overview">
+            <h4>Exam Overview</h4>
+            <div class="question-grid" id="question-grid">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="showSummary()">Finish attempt ...</button>
+        </div>
+    </div>
+
+    <script>
+        const attemptData = {
+            _id: '<%= attempt._id %>',
+            exam: {
+                _id: '<%= attempt.exam._id %>',
+                subject: '<%= attempt.exam.subject %>',
+                duration: <%= attempt.exam.duration %>
+            },
+            answers: <%= JSON.stringify(attempt.answers) %>,
+            startTime: '<%= attempt.startTime %>'
+        };
+
+        const questions = <%= JSON.stringify(attempt.exam.questions) %>;
+        let currentIndex = 0;
+        let timeRemaining = <%= timeRemaining %>;
+        let timerInterval;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderQuestionGrid();
+            loadQuestion(0);
+            startTimer();
+            updateNavButtons();
+        });
+
+        function startTimer() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+                
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam(true);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(timeRemaining / 3600);
+            const minutes = Math.floor((timeRemaining % 3600) / 60);
+            const seconds = timeRemaining % 60;
+            document.getElementById('time-display').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (timeRemaining < 300) {
+                document.getElementById('timer').classList.add('urgent');
+            }
+        }
+
+        function renderQuestionGrid() {
+            const grid = document.getElementById('question-grid');
+            grid.innerHTML = '';
+            
+            attemptData.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'grid-item';
+                btn.textContent = index + 1;
+                
+                if (index === currentIndex) btn.classList.add('active');
+                if (answer.selectedOption !== null) btn.classList.add('answered');
+                if (answer.flagged) btn.classList.add('flagged');
+                
+                btn.onclick = () => loadQuestion(index);
+                grid.appendChild(btn);
+            });
+        }
+
+        function loadQuestion(index) {
+            currentIndex = index;
+            const question = questions[index];
+            const answer = attemptData.answers[index];
+            
+            document.getElementById('current-q-num').textContent = index + 1;
+            document.getElementById('answer-status').textContent = answer.selectedOption !== null ? 'Answered' : 'Not yet answered';
+            
+            const container = document.getElementById('question-container');
+            container.innerHTML = `
+                <div class="question-text">${question.questionText}</div>
+                <div class="options">
+                    ${question.options.map((opt, i) => `
+                        <label class="option-item ${answer.selectedOption === i ? 'selected' : ''}">
+                            <input type="radio" name="answer" value="${i}" 
+                                ${answer.selectedOption === i ? 'checked' : ''} 
+                                onchange="saveAnswer(${i})">
+                            <span class="option-text">${opt}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('flag-btn').textContent = answer.flagged ? '🏳️ Remove flag' : '🚩 Flag question';
+            renderQuestionGrid();
+            updateNavButtons();
+        }
+
+        function saveAnswer(optionIndex) {
+            attemptData.answers[currentIndex].selectedOption = optionIndex;
+            
+            fetch(`/exam/attempt/${attemptData._id}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    questionId: questions[currentIndex]._id,
+                    selectedOption: optionIndex,
+                    flagged: attemptData.answers[currentIndex].flagged
+                })
+            });
+            
+            renderQuestionGrid();
+        }
+
+        function toggleFlag() {
+            attemptData.answers[currentIndex].flagged = !attemptData.answers[currentIndex].flagged;
+            
+            fetch(`/exam/attempt/${attemptData._id}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    questionId: questions[currentIndex]._id,
+                    selectedOption: attemptData.answers[currentIndex].selectedOption,
+                    flagged: attemptData.answers[currentIndex].flagged
+                })
+            });
+            
+            loadQuestion(currentIndex);
+        }
+
+        function nextQuestion() {
+            if (currentIndex < questions.length - 1) {
+                loadQuestion(currentIndex + 1);
+            }
+        }
+
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                loadQuestion(currentIndex - 1);
+            }
+        }
+
+        function updateNavButtons() {
+            document.getElementById('prev-btn').disabled = currentIndex === 0;
+            
+            if (currentIndex === questions.length - 1) {
+                document.getElementById('next-btn').classList.add('hidden');
+                document.getElementById('finish-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('next-btn').classList.remove('hidden');
+                document.getElementById('finish-btn').classList.add('hidden');
+            }
+        }
+
+        function showSummary() {
+            window.location.href = `/exam/summary/${attemptData._id}`;
+        }
+
+        function submitExam(auto = false) {
+            if (!auto && !confirm('Are you sure you want to submit? You cannot change your answers after submission.')) {
+                return;
+            }
+            
+            fetch(`/exam/attempt/${attemptData._id}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            })
+            .catch(err => {
+                console.error('Submit error:', err);
+                alert('Error submitting exam. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

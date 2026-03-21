@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Result - <%= attempt.exam.subject %></title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <div class="logo">Ministry of Education</div>
+            <div class="user-info">
+                <span><%= student.fullName %></span>
+                <div class="avatar"><%= student.fullName.charAt(0) %></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container main-content">
+        <div class="result-card">
+            <div class="result-header">
+                <h1>✅ Exam Submitted!</h1>
+                <p><%= attempt.exam.subject %> - Grade 12</p>
+            </div>
+
+            <div class="result-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><%= attempt.score %>/<%= attempt.exam.totalMarks %></div>
+                    <div class="stat-label">Score</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><%= attempt.percentage.toFixed(1) %>%</div>
+                    <div class="stat-label">Percentage</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><%= Math.floor(attempt.timeSpent / 60) %> min</div>
+                    <div class="stat-label">Time Spent</div>
+                </div>
+            </div>
+
+            <div class="result-info">
+                <p><strong>Submitted:</strong> <%= attempt.submitTime.toLocaleString() %></p>
+                <p><strong>Status:</strong> <span class="status-badge"><%= attempt.status %></span></p>
+            </div>
+
+            <a href="/dashboard" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

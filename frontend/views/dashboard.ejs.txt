@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Grade 12 Exam</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <div class="logo">Ministry of Education</div>
+            <div class="user-info">
+                <span><%= student.fullName %></span>
+                <div class="avatar"><%= student.fullName.charAt(0) %></div>
+                <a href="/logout" class="btn btn-sm btn-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container main-content">
+        <div class="basic-info">
+            <strong>Basic Information</strong><br>
+            Full Name: <%= student.fullName %> | School: <%= student.school %><br>
+            Admission Number: <%= student.admissionNumber %> | Exam Center: <%= student.examCenter %>
+        </div>
+
+        <h1 class="welcome-msg">Welcome, <%= student.fullName.split(' ')[0] %>! 👋</h1>
+        
+        <h2>Exam Overview</h2>
+        
+        <div class="exams-grid">
+            <% exams.forEach(exam => { %>
+                <div class="exam-card" onclick="window.location.href='/exam/<%= exam._id %>'">
+                    <div class="exam-icon"><%= exam.subject.charAt(0) %></div>
+                    <h3><%= exam.courseName %></h3>
+                    <p><%= exam.subject %> - Grade 12</p>
+                    <div class="exam-meta">
+                        <span>Duration: <%= exam.duration %> min</span>
+                        <span>Questions: <%= exam.questions.length %></span>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <% if (completedAttempts.length > 0) { %>
+            <h2>Completed Exams</h2>
+            <div class="completed-exams">
+                <% completedAttempts.forEach(attempt => { %>
+                    <div class="completed-item">
+                        <span><%= attempt.exam.subject %></span>
+                        <span>Score: <%= attempt.score %>/<%= attempt.exam.totalMarks %></span>
+                        <span><%= attempt.percentage.toFixed(1) %>%</span>
+                        <a href="/exam/result/<%= attempt._id %>">View</a>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

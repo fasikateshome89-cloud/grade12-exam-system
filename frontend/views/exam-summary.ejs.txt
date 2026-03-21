@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Summary</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <div class="logo">Ministry of Education</div>
+            <div class="user-info">
+                <span><%= student.fullName %></span>
+                <div class="avatar"><%= student.fullName.charAt(0) %></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container main-content">
+        <h2>Summary of Attempt</h2>
+        
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="summary-list">
+            </tbody>
+        </table>
+
+        <div class="summary-actions">
+            <button class="btn btn-secondary" onclick="window.history.back()">Return to attempt</button>
+            <button class="btn btn-primary" onclick="submitExam()">Submit all and finish</button>
+        </div>
+
+        <p class="deadline-info">
+            This attempt must be submitted by <%= attempt.exam.closeDate.toLocaleString() %>
+        </p>
+    </div>
+
+    <script>
+        const answers = <%= JSON.stringify(attempt.answers) %>;
+        const attemptId = '<%= attempt._id %>';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tbody = document.getElementById('summary-list');
+            
+            answers.forEach((answer, index) => {
+                const tr = document.createElement('tr');
+                const tdNum = document.createElement('td');
+                tdNum.textContent = index + 1;
+                const tdStatus = document.createElement('td');
+                
+                if (answer.selectedOption !== null) {
+                    tdStatus.textContent = 'Answer saved';
+                    tdStatus.className = 'status-saved';
+                } else {
+                    tdStatus.textContent = 'Not yet answered';
+                    tdStatus.className = 'status-missing';
+                }
+                
+                tr.appendChild(tdNum);
+                tr.appendChild(tdStatus);
+                tbody.appendChild(tr);
+            });
+        });
+
+        function submitExam() {
+            if (!confirm('Once you submit, you will no longer be able to change your answers for this attempt.')) {
+                return;
+            }
+            
+            fetch(`/exam/attempt/${attemptId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            })
+            .catch(err => {
+                console.error('Submit error:', err);
+                alert('Error submitting exam. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
