@@ -21,12 +21,12 @@ router.post('/login', async (req, res) => {
       return res.render('login', { error: 'Invalid admission number or password' });
     }
 
-    const isMatch = await student.comparePassword(password);
+    const isMatch = (password === student.password);
     if (!isMatch) {
       return res.render('login', { error: 'Invalid admission number or password' });
     }
 
-    req.session.studentId = student._id;
+   req.session.studentId = student._id;
     req.session.save();
 
     if (student.mustChangePassword) {
