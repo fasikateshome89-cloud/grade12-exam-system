@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Exam System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .header { background: #667eea; color: white; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .welcome { margin-bottom: 30px; }
+        .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .exam-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+        .logout { float: right; color: white; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Dashboard</h1>
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="welcome">
+            <h2>Welcome, <%= student.firstName %> <%= student.lastName %>!</h2>
+            <p>Admission: <%= student.admissionNumber %></p>
+        </div>
+        <h3>Available Exams</h3>
+        <div class="exams-grid">
+            <% exams.forEach(function(exam) { %>
+                <div class="exam-card">
+                    <h4><%= exam.subject %></h4>
+                    <p><%= exam.duration %> minutes</p>
+                    <p><%= exam.totalQuestions %> questions</p>
+                    <a href="/exam/<%= exam._id %>" class="btn">Start Exam</a>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</body>
+</html>
