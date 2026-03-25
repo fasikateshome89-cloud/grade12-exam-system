@@ -2,68 +2,42 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const helmet = require('helmet');
-const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/database');
 
 const app = express();
-
-// Connect to Database
 connectDB();
 
-// Middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
-// Session Configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'secret-key',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/grade12_exam'
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+  cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../frontend/views'));
 
-// Routes
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/exam'));
 
-// Home Route
 app.get('/', (req, res) => {
-  if (req.session.studentId) {
-    res.redirect('/dashboard');
-  } else {
-    res.redirect('/login');
-  }
+  res.redirect(req.session.studentId ? '/dashboard' : '/login');
 });
 
-// Error Handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Visit http://localhost:${PORT}`);
 });
 
 module.exports = app;
